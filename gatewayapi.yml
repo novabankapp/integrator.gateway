@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway-deployment
+  labels:
+    app: apigateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apigateway
+  template:
+    metadata:
+      labels:
+        app: apigateway
+    spec:
+      containers:
+        - name: gateway-api
+          image: novabank/gateway_api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: ElasticConfiguration__Uri
+              value: "http://elasticsearch:9200"
+            - name: IdentityServerConfig__IdentityScheme
+              value: "Bearer"
+            - name: IdentityServerConfig__Audience
+              value: "VasPortal"
+            - name: IdentityServerConfig__Protocol
+              value: "http"
+            - name: IdentityServerConfig__IP
+              value: "10.40.129.53"
+            - name: IdentityServerConfig__Port
+              value: "30002"
+            - name: IdentityServerConfig__Resources__0__Key
+              value: "APIService"
+            - name: IdentityServerConfig__Resources__0__Name
+              value: "identityAPIService"
+            - name: IdentityServerConfig__Resources__1__Key
+              value: "APIService8002"
+            - name: IdentityServerConfig__Resources__1__Name
+              value: "identityAPIService8002"
+            - name: AdminPassword
+              value: "ozone3"
+      imagePullSecrets:
+        - name: docker-secret      
+    
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+spec:
+  type: NodePort
+  selector:
+    app: apigateway
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 80
+      nodePort: 30001
+
